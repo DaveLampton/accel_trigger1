@@ -2,32 +2,28 @@
 # SPDX-License-Identifier: MIT
 
 """
-This test will initialize the display using displayio and draw a solid white
-background, a smaller black rectangle, and some white text.
+This test will initialize the display using displayio and draw a solid
+white background, a smaller black rectangle, and some white text.
 """
 
 import board
+import busio
+import adafruit_lis3dh
 import displayio
 import terminalio
 import time
 from adafruit_display_text import label
 import adafruit_displayio_ssd1306
 
+i2c = busio.I2C(board.SCL, board.SDA)
+lis3dh = adafruit_lis3dh.LIS3DH_I2C(i2c, address=0x18)
+# Range can be RANGE_2_G, RANGE_4_G, RANGE_8_G or RANGE_16_G
+lis3dh.range = adafruit_lis3dh.RANGE_2_G
+
+#------------------------------------------------------------------------------------
 displayio.release_displays()
 
-#oled_reset = board.D9
-
-# Use for I2C
-i2c = board.I2C()
-#display_bus = displayio.I2CDisplay(i2c, device_address=0x3D, reset=oled_reset)
 display_bus = displayio.I2CDisplay(i2c, device_address=0x3D)
-
-# Use for SPI
-# spi = board.SPI()
-# oled_cs = board.D5
-# oled_dc = board.D6
-# display_bus = displayio.FourWire(spi, command=oled_dc, chip_select=oled_cs,
-#                                 reset=oled_reset, baudrate=1000000)
 
 WIDTH = 128
 HEIGHT = 64  # Change to 64 if needed
@@ -57,15 +53,16 @@ splash.append(inner_sprite)
 
 # Create the label
 text_area = label.Label(
-    terminalio.FONT, text=" "*3, color=0xFFFFFF, x=28, y=HEIGHT // 2 - 1
+    terminalio.FONT, text=" "*15, color=0xFFFFFF, x=18, y=HEIGHT // 2 - 1
 )
 splash.append(text_area)
 
-count = 0
-
 while True:
+    x, y, z = lis3dh.acceleration
+    vertical = z - adafruit_lis3dh.STANDARD_GRAVITY
     # Update the label
-    text_area.text = str(count)
-    print(count)
-    count += 1
-    time.sleep(1)
+    if vertical > 0:
+        text_area.text = "Z =  %0.2f m/s^2" % vertical
+    else:
+        text_area.text = "Z = %0.2f m/s^2" % vertical
+    time.sleep(0.0001)
