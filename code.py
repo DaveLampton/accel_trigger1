@@ -64,13 +64,15 @@ text_area = label.Label(
 )
 splash.append(text_area)
 
-print('Program executing...')
+print('Program running...')
 
 samples = [0, 0, 0, 0, 0]
 writeHead = 0
 threshold = 0.3
 max = 0
-cyclesOpen = 1
+timeOpen = 0
+open = False
+openedAt = 0
 
 while True:
     x, y, z = lis3dh.acceleration
@@ -82,18 +84,26 @@ while True:
     # Update the label
     text_area.text = "Z = %0.2f m/s^2" % average
     if average > threshold:
+        if timeOpen == 0:
+            openedAt = time.monotonic_ns()/10000000.0
+            print("OPEN - 0 ms")
+            open = True
+    #    else:
+    #        print("Time open: %i0 ms" % timeOpen)
         led.value = True
         if average > max:
             max = average
-            print("Max: %0.2f" % max)
-        print("Cycles open: %i" % cyclesOpen)
-        cyclesOpen += 1
+            print("Max this hit: %0.2f m/s^2" % max)
+        timeOpen += 1
     else:
+        if open:
+            print("Open for: %0.2f ms" % ((time.monotonic_ns()/10000000.0) - openedAt))
+            open = False
         led.value = False
         max = 0
-        cyclesOpen = 1
+        timeOpen = 0
     if writeHead == 4:
         writeHead = 0
     else:
         writeHead += 1
-    time.sleep(0.00095)
+    time.sleep(0.0099)
